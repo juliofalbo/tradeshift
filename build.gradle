@@ -1,0 +1,59 @@
+buildscript {
+	ext {
+		springBootVersion = '2.1.1.RELEASE'
+		swaggerVersion = '2.9.2'
+	}
+	repositories {
+		mavenCentral()
+	}
+	dependencies {
+		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+	}
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+
+group = 'com.tradeshift.juliofalbo.challenge'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = 1.8
+
+repositories {
+	mavenCentral()
+	maven { url "https://repo.spring.io/milestone" }
+}
+
+ext['springCloudVersion'] = 'Greenwich.M3'
+
+dependencies {
+	implementation('org.springframework.boot:spring-boot-starter-actuator')
+	implementation('org.springframework.boot:spring-boot-starter-data-mongodb')
+	implementation('org.springframework.boot:spring-boot-starter-web')
+	implementation('org.springframework.cloud:spring-cloud-starter-netflix-hystrix')
+
+	compile("io.springfox:springfox-swagger2:${swaggerVersion}")
+	compile("io.springfox:springfox-swagger-ui:${swaggerVersion}")
+    compile("org.springframework.boot:spring-boot-starter-hateoas:${springBootVersion}")
+
+    compileOnly('org.projectlombok:lombok')
+
+    testImplementation('io.rest-assured:rest-assured:3.1.1')
+    testImplementation('org.springframework.boot:spring-boot-starter-test') {
+        exclude group: 'junit', module: 'junit'
+    }
+    testImplementation('org.junit.jupiter:junit-jupiter-api:5.2.0')
+    testImplementation('org.junit.jupiter:junit-jupiter-engine:5.2.0')
+    testImplementation('de.flapdoodle.embed:de.flapdoodle.embed.mongo')
+}
+
+dependencyManagement {
+	imports {
+		mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+	}
+}
+
+test {
+    useJUnitPlatform()
+}
