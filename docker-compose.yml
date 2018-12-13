@@ -8,7 +8,10 @@ services:
     - .:/var/www:rw
     - /tmp/.X11-unix:/tmp/.X11-unix:rw
     ports:
-    - 9000:9000
+    - 8087:8087
+    environment:
+    - SPRING_PROFILES_ACTIVE=prod
+    - spring.data.mongodb.uri=mongodb://mongodb/tradeshift
     links:
     - mongodb
     depends_on:

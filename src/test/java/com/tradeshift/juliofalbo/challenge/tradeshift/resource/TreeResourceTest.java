@@ -1,5 +1,7 @@
 package com.tradeshift.juliofalbo.challenge.tradeshift.resource;
 
+import java.util.HashMap;
+
 import com.tradeshift.juliofalbo.challenge.tradeshift.dto.TreeRequest;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
@@ -15,8 +17,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-
-import java.util.HashMap;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -106,7 +106,6 @@ class TreeResourceTest {
                 .statusCode(201);
         String thirdNode = returnCreatedId(thirdResponse);
 
-
         sendGetRequestForFindById(idRoot)
                 .statusCode(200)
                 .assertThat()
@@ -143,7 +142,6 @@ class TreeResourceTest {
                 .log().all()
                 .statusCode(201);
         String thirdNode = returnCreatedId(thirdResponse);
-
 
         sendAGetRequestForGetAllChildrens(idRoot)
                 .statusCode(200)
@@ -193,7 +191,6 @@ class TreeResourceTest {
                 .log().all()
                 .statusCode(201);
         String thirdNode = returnCreatedId(thirdResponse);
-
 
         sendPatchRequestForUpdateParent(secondNode, thirdNode)
                 .statusCode(400)
@@ -259,17 +256,14 @@ class TreeResourceTest {
                 .statusCode(201);
         String thirdNode = returnCreatedId(thirdResponse);
 
-
         Response fourthResponse = sendPostRequestAndReturnResponse(new TreeRequest(thirdNode, true, false));
         fourthResponse.then()
                 .log().all()
                 .statusCode(201);
         String fourthNode = returnCreatedId(fourthResponse);
 
-
         sendPatchRequestForUpdateParent(fourthNode, secondNode)
                 .statusCode(200);
-
 
         ValidatableResponse validatableResponse = sendGetRequestForFindById(fourthNode)
                 .statusCode(200)
@@ -299,6 +293,24 @@ class TreeResourceTest {
         sendPatchRequestForUpdateParent(idRoot, secondNode)
                 .statusCode(400)
                 .body("message", Matchers.equalTo("It is not possible to insert a parent in a root"));
+    }
+
+    @Test
+    void verifyResponseTimeForGetAllChildrens() {
+        Response response = sendPostRequestAndReturnResponse(new TreeRequest("", false, true));
+        response.then()
+                .log().all()
+                .statusCode(201);
+        String idRoot = returnCreatedId(response);
+        String id = "" + idRoot;
+        for (int i = 0; i < 1000; i++) {
+            Response responsePost = sendPostRequestAndReturnResponse(new TreeRequest(id, false, true));
+            response.then()
+                    .statusCode(201);
+            id = returnCreatedId(responsePost);
+        }
+
+        sendAGetRequestForGetAllChildrens(idRoot).time(Matchers.lessThan(1000L));
     }
 
     private String returnCreatedId(Response response) {
