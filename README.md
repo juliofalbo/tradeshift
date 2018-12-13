@@ -22,15 +22,19 @@ The strategy used for the tests was that of integration tests, using the [RestAs
 
 ### Swagger
 To access the swagger, simply run the application and enter the **/swagger-ui.html** path.
-
+Example running local
 ```
-Example running local: http://localhost:8080/swagger-ui.html
+http://localhost:8080/swagger-ui.html
 ```
-
 
 ##### To run the tests
 ```
 ./gradlew test
+```
+
+### Run app with docker-compose
+```
+docker-compose up
 ```
 
 _____
