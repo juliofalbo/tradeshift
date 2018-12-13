@@ -4,9 +4,6 @@ services:
     build: .
     container_name: "tradeshift"
     image: debian/latest
-    volumes:
-    - .:/var/www:rw
-    - /tmp/.X11-unix:/tmp/.X11-unix:rw
     ports:
     - 8087:8087
     environment:

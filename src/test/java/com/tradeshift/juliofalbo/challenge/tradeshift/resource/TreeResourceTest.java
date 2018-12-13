@@ -310,7 +310,7 @@ class TreeResourceTest {
             id = returnCreatedId(responsePost);
         }
 
-        sendAGetRequestForGetAllChildrens(idRoot).time(Matchers.lessThan(1000L));
+        sendAGetRequestForGetAllChildrens(idRoot).time(Matchers.lessThan(3000L));
     }
 
     private String returnCreatedId(Response response) {
