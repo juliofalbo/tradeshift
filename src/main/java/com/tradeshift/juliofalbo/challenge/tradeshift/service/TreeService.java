@@ -1,6 +1,5 @@
 package com.tradeshift.juliofalbo.challenge.tradeshift.service;
 
-import com.tradeshift.juliofalbo.challenge.tradeshift.builder.TreeResponseBuilder;
 import com.tradeshift.juliofalbo.challenge.tradeshift.dto.TreeRequest;
 import com.tradeshift.juliofalbo.challenge.tradeshift.dto.TreeResponse;
 import com.tradeshift.juliofalbo.challenge.tradeshift.entity.Tree;
@@ -36,17 +35,23 @@ public class TreeService {
     @Autowired
     private TreeMapper treeMapper;
 
+    /**
+     * You can change the parent of a tree anywhere in the structure, but this can cause a {@link StackOverflowError}.
+     * So I opted for the validations.
+     * @param tree
+     * @param idTree
+     * @return Tree
+     */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Tree update(@NonNull TreeRequest tree, @NonNull String idTree) {
 
         Tree updateTree = findByIdWithValidation(idTree);
         Tree newParent = findByIdWithValidation(tree.getIdParent());
 
+        validateIfTheUpdateTreeIsARoot(updateTree);
         validateIfTheParentIsAlreadyChildren(updateTree, newParent);
         validateIfTheParentIsYourself(updateTree, newParent);
         validateIfTheSameParent(updateTree, newParent);
-        validateStackOverFlowError(updateTree, newParent);
-
 
         if (!validateIfTheParentIsFull(newParent)) {
 
@@ -67,10 +72,11 @@ public class TreeService {
     }
 
     private void validateIfTheParentIsAlreadyChildren(Tree updateTree, Tree newParent) {
-        if(updateTree.getIdRightNode().filter(right -> right.equals(newParent.getId())).isPresent()){
+        if(updateTree.getIdRightNode().filter(right -> right.equals(newParent.getId())).isPresent() ||
+                updateTree.getIdLeftNode().filter(left -> left.equals(newParent.getId())).isPresent()){
             throw new TheParentIsAlreadyChildrenException("The parent choiced is already your children");
         }
-        if(updateTree.getIdLeftNode().filter(left -> left.equals(newParent.getId())).isPresent()){
+        if(getAllChildrenNodesIterative(updateTree).stream().anyMatch(tree -> tree.getId().equals(newParent.getId()))){
             throw new TheParentIsAlreadyChildrenException("The parent choiced is already your children");
         }
     }
@@ -86,10 +92,9 @@ public class TreeService {
             throw new SameParentException("The parent is already his parent");
         }
     }
-
-    private void validateStackOverFlowError(Tree updateTree, Tree newParent) {
-        if(TreeResponseBuilder.init(updateTree, this).safeBuild().getHeight() < TreeResponseBuilder.init(newParent, this).safeBuild().getHeight()){
-            throw new StackOverflowException("Your change will genarate a StackOverFlowError");
+    private void validateIfTheUpdateTreeIsARoot(Tree newParent) {
+        if(!newParent.getIdParent().isPresent()){
+            throw new ImpossibleInsertParentInARootException("It is not possible to insert a parent in a root");
         }
     }
 

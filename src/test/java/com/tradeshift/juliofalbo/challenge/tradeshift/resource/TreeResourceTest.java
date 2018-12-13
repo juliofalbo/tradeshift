@@ -2,6 +2,7 @@ package com.tradeshift.juliofalbo.challenge.tradeshift.resource;
 
 import com.tradeshift.juliofalbo.challenge.tradeshift.dto.TreeRequest;
 import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import io.restassured.response.ValidatableResponse;
 import org.assertj.core.api.Assertions;
@@ -33,102 +34,48 @@ class TreeResourceTest {
 
     @Test
     void insertARootNode() {
-        RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest("", true, true))
-                .when()
-                .post("/trees")
-                .then()
-                .log().all()
+        sendPostRequestAndReturnValidatableResponse(new TreeRequest("", true, true))
                 .statusCode(201);
     }
 
     @Test
     void receiveErrorThatOnlyOneRootCanBeExists() {
-        RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest("", false, false))
-                .when()
-                .post("/trees")
-                .then()
-                .log().all()
+        sendPostRequestAndReturnValidatableResponse(new TreeRequest("", false, false))
                 .statusCode(201);
 
-        RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest("", true, true))
-                .when()
-                .post("/trees")
-                .then()
-                .log().all()
+        sendPostRequestAndReturnValidatableResponse(new TreeRequest("", true, true))
                 .statusCode(400)
                 .body("message", Matchers.equalTo("Only one root tree can be exists"));
     }
 
     @Test
     void inserNodeWithoutPassHasLeftNodeAndHasRightNode() {
-        RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest("", null, null))
-                .when()
-                .post("/trees")
-                .then()
-                .log().all()
+        sendPostRequestAndReturnValidatableResponse(new TreeRequest("", null, null))
                 .statusCode(201);
     }
 
     @Test
     void insertNodeWithParentIdThatNotExists() {
-        RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest("3212142151tgf", true, true))
-                .when()
-                .post("/trees")
-                .then()
-                .log().all()
+        sendPostRequestAndReturnValidatableResponse(new TreeRequest("3212142151tgf", true, true))
                 .statusCode(404)
                 .body("message", Matchers.equalTo("No exist tree with id 3212142151tgf"));
     }
 
     @Test
     void insertNodeWithParentIdThatExists() {
-        Response response = RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest("", false, true))
-                .when()
-                .post("/trees");
-
+        Response response = sendPostRequestAndReturnResponse(new TreeRequest("", false, true));
         response.then()
                 .log().all()
                 .statusCode(201);
-
         String idRoot = returnCreatedId(response);
-        Response secondResponse = RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest(idRoot, true, true))
-                .when()
-                .post("/trees");
 
+        Response secondResponse = sendPostRequestAndReturnResponse(new TreeRequest(idRoot, true, true));
         secondResponse.then()
                 .log().all()
                 .statusCode(201);
-
         String idChildren = returnCreatedId(secondResponse);
 
-        ValidatableResponse validatableResponse = RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .when()
-                .get("/trees/" + idChildren)
-                .then()
-                .log().all()
+        ValidatableResponse validatableResponse = sendGetRequestForFindById(idChildren)
                 .statusCode(200)
                 .assertThat()
                 .body("id", Matchers.equalTo(idChildren));
@@ -141,70 +88,36 @@ class TreeResourceTest {
 
     @Test
     void verifyHeightOfTheNodes() {
-        Response response = RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest("", false, true))
-                .when()
-                .post("/trees");
-
+        Response response = sendPostRequestAndReturnResponse(new TreeRequest("", false, true));
         response.then()
                 .log().all()
                 .statusCode(201);
         String idRoot = returnCreatedId(response);
 
-        Response secondResponse = RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest(idRoot, true, false))
-                .when()
-                .post("/trees");
+        Response secondResponse = sendPostRequestAndReturnResponse(new TreeRequest(idRoot, true, false));
         secondResponse.then()
                 .log().all()
                 .statusCode(201);
         String secondNode = returnCreatedId(secondResponse);
 
-        Response thirdResponse = RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest(secondNode, true, true))
-                .when()
-                .post("/trees");
+        Response thirdResponse = sendPostRequestAndReturnResponse(new TreeRequest(secondNode, true, true));
         thirdResponse.then()
                 .log().all()
                 .statusCode(201);
         String thirdNode = returnCreatedId(thirdResponse);
 
 
-        RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .when()
-                .get("/trees/" + idRoot)
-                .then()
-                .log().all()
+        sendGetRequestForFindById(idRoot)
                 .statusCode(200)
                 .assertThat()
                 .body("height", Matchers.equalTo(0));
 
-        RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .when()
-                .get("/trees/" + secondNode)
-                .then()
-                .log().all()
+        sendGetRequestForFindById(secondNode)
                 .statusCode(200)
                 .assertThat()
                 .body("height", Matchers.equalTo(1));
 
-        RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .when()
-                .get("/trees/" + thirdNode)
-                .then()
-                .log().all()
+        sendGetRequestForFindById(thirdNode)
                 .statusCode(200)
                 .assertThat()
                 .body("height", Matchers.equalTo(2));
@@ -213,70 +126,36 @@ class TreeResourceTest {
 
     @Test
     void verifyChildrens() {
-        Response response = RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest("", false, true))
-                .when()
-                .post("/trees");
-
+        Response response = sendPostRequestAndReturnResponse(new TreeRequest("", false, true));
         response.then()
                 .log().all()
                 .statusCode(201);
         String idRoot = returnCreatedId(response);
 
-        Response secondResponse = RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest(idRoot, true, false))
-                .when()
-                .post("/trees");
+        Response secondResponse = sendPostRequestAndReturnResponse(new TreeRequest(idRoot, true, false));
         secondResponse.then()
                 .log().all()
                 .statusCode(201);
         String secondNode = returnCreatedId(secondResponse);
 
-        Response thirdResponse = RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest(secondNode, true, true))
-                .when()
-                .post("/trees");
+        Response thirdResponse = sendPostRequestAndReturnResponse(new TreeRequest(secondNode, true, true));
         thirdResponse.then()
                 .log().all()
                 .statusCode(201);
         String thirdNode = returnCreatedId(thirdResponse);
 
 
-        RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .when()
-                .get("/trees/" + idRoot + "/childrens")
-                .then()
-                .log().all()
+        sendAGetRequestForGetAllChildrens(idRoot)
                 .statusCode(200)
                 .assertThat()
                 .body("totalElements", Matchers.equalTo(6));
 
-        RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .when()
-                .get("/trees/" + secondNode + "/childrens")
-                .then()
-                .log().all()
+        sendAGetRequestForGetAllChildrens(secondNode)
                 .statusCode(200)
                 .assertThat()
                 .body("totalElements", Matchers.equalTo(4));
 
-        RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .when()
-                .get("/trees/" + thirdNode + "/childrens")
-                .then()
-                .log().all()
+        sendAGetRequestForGetAllChildrens(thirdNode)
                 .statusCode(200)
                 .assertThat()
                 .body("totalElements", Matchers.equalTo(2));
@@ -284,75 +163,39 @@ class TreeResourceTest {
 
     @Test
     void tryingToInsertANodeIntoAFullTree() {
-        Response response = RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest("", true, true))
-                .when()
-                .post("/trees");
-
+        Response response = sendPostRequestAndReturnResponse(new TreeRequest("", true, true));
         response.then()
                 .log().all()
                 .statusCode(201);
         String idRoot = returnCreatedId(response);
 
-        RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest(idRoot, true, false))
-                .when()
-                .post("/trees")
-                .then()
-                .log().all()
+        sendPostRequestAndReturnValidatableResponse(new TreeRequest(idRoot, true, false))
                 .statusCode(400)
                 .body("message", Matchers.equalTo("Parent Tree is Full"));
     }
 
     @Test
     void tryToChangeTheParentForOneOfYourChildren() {
-        Response response = RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest("", false, true))
-                .when()
-                .post("/trees");
-
+        Response response = sendPostRequestAndReturnResponse(new TreeRequest("", false, true));
         response.then()
                 .log().all()
                 .statusCode(201);
         String idRoot = returnCreatedId(response);
 
-        Response secondResponse = RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest(idRoot, true, false))
-                .when()
-                .post("/trees");
+        Response secondResponse = sendPostRequestAndReturnResponse(new TreeRequest(idRoot, true, false));
         secondResponse.then()
                 .log().all()
                 .statusCode(201);
         String secondNode = returnCreatedId(secondResponse);
 
-        Response thirdResponse = RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest(secondNode, true, false))
-                .when()
-                .post("/trees");
+        Response thirdResponse = sendPostRequestAndReturnResponse(new TreeRequest(secondNode, true, false));
         thirdResponse.then()
                 .log().all()
                 .statusCode(201);
         String thirdNode = returnCreatedId(thirdResponse);
 
 
-        RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest(thirdNode))
-                .when()
-                .patch("/trees/" + secondNode)
-                .then()
-                .log().all()
+        sendPatchRequestForUpdateParent(secondNode, thirdNode)
                 .statusCode(400)
                 .body("message", Matchers.equalTo("The parent choiced is already your children"));
 
@@ -360,145 +203,75 @@ class TreeResourceTest {
 
     @Test
     void tryToInsertMyselfAsParent() {
-        Response response = RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest("", false, true))
-                .when()
-                .post("/trees");
-
+        Response response = sendPostRequestAndReturnResponse(new TreeRequest("", false, true));
         response.then()
                 .log().all()
                 .statusCode(201);
         String idRoot = returnCreatedId(response);
 
-        Response secondResponse = RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest(idRoot, true, false))
-                .when()
-                .post("/trees");
+        Response secondResponse = sendPostRequestAndReturnResponse(new TreeRequest(idRoot, true, false));
         secondResponse.then()
                 .log().all()
                 .statusCode(201);
         String secondNode = returnCreatedId(secondResponse);
 
-        RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest(secondNode))
-                .when()
-                .patch("/trees/" + secondNode)
-                .then()
-                .log().all()
+        sendPatchRequestForUpdateParent(secondNode, secondNode)
                 .statusCode(400)
                 .body("message", Matchers.equalTo("You can not insert yourself as parent"));
     }
 
     @Test
     void tryToChangeForTheSameParent() {
-        Response response = RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest("", false, true))
-                .when()
-                .post("/trees");
-
+        Response response = sendPostRequestAndReturnResponse(new TreeRequest("", false, true));
         response.then()
                 .log().all()
                 .statusCode(201);
         String idRoot = returnCreatedId(response);
 
-        Response secondResponse = RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest(idRoot, true, false))
-                .when()
-                .post("/trees");
+        Response secondResponse = sendPostRequestAndReturnResponse(new TreeRequest(idRoot, true, false));
         secondResponse.then()
                 .log().all()
                 .statusCode(201);
         String secondNode = returnCreatedId(secondResponse);
 
-        RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest(idRoot))
-                .when()
-                .patch("/trees/" + secondNode)
-                .then()
-                .log().all()
+        sendPatchRequestForUpdateParent(secondNode, idRoot)
                 .statusCode(400)
                 .body("message", Matchers.equalTo("The parent is already his parent"));
     }
 
     @Test
     void updateAParentWithSuccess() {
-        Response response = RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest("", false, true))
-                .when()
-                .post("/trees");
-
+        Response response = sendPostRequestAndReturnResponse(new TreeRequest("", false, true));
         response.then()
                 .log().all()
                 .statusCode(201);
         String idRoot = returnCreatedId(response);
 
-        Response secondResponse = RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest(idRoot, false, false))
-                .when()
-                .post("/trees");
+        Response secondResponse = sendPostRequestAndReturnResponse(new TreeRequest(idRoot, false, false));
         secondResponse.then()
                 .log().all()
                 .statusCode(201);
         String secondNode = returnCreatedId(secondResponse);
 
-        Response thirdResponse = RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest(secondNode, true, false))
-                .when()
-                .post("/trees");
+        Response thirdResponse = sendPostRequestAndReturnResponse(new TreeRequest(secondNode, true, false));
         thirdResponse.then()
                 .log().all()
                 .statusCode(201);
         String thirdNode = returnCreatedId(thirdResponse);
 
 
-        Response fourthResponse = RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest(thirdNode, true, false))
-                .when()
-                .post("/trees");
+        Response fourthResponse = sendPostRequestAndReturnResponse(new TreeRequest(thirdNode, true, false));
         fourthResponse.then()
                 .log().all()
                 .statusCode(201);
         String fourthNode = returnCreatedId(fourthResponse);
 
 
-        RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest(secondNode))
-                .when()
-                .patch("/trees/" + fourthNode)
-                .then()
-                .log().all()
+        sendPatchRequestForUpdateParent(fourthNode, secondNode)
                 .statusCode(200);
 
 
-        ValidatableResponse validatableResponse = RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .when()
-                .get("/trees/" + fourthNode)
-                .then()
-                .log().all()
+        ValidatableResponse validatableResponse = sendGetRequestForFindById(fourthNode)
                 .statusCode(200)
                 .assertThat()
                 .body("id", Matchers.equalTo(fourthNode));
@@ -510,69 +283,73 @@ class TreeResourceTest {
     }
 
     @Test
-    void tryingToMakeAChangeThatWillCauseStackOverflowError() {
-        Response response = RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest("", false, true))
-                .when()
-                .post("/trees");
-
+    void tryToInsertAParentInARoot() {
+        Response response = sendPostRequestAndReturnResponse(new TreeRequest("", false, true));
         response.then()
                 .log().all()
                 .statusCode(201);
         String idRoot = returnCreatedId(response);
 
-        Response secondResponse = RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest(idRoot, false, false))
-                .when()
-                .post("/trees");
+        Response secondResponse = sendPostRequestAndReturnResponse(new TreeRequest(idRoot, false, false));
         secondResponse.then()
                 .log().all()
                 .statusCode(201);
         String secondNode = returnCreatedId(secondResponse);
 
-        Response thirdResponse = RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest(secondNode, true, false))
-                .when()
-                .post("/trees");
-        thirdResponse.then()
-                .log().all()
-                .statusCode(201);
-        String thirdNode = returnCreatedId(thirdResponse);
-
-
-        Response fourthResponse = RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest(thirdNode, true, false))
-                .when()
-                .post("/trees");
-        fourthResponse.then()
-                .log().all()
-                .statusCode(201);
-        String fourthNode = returnCreatedId(fourthResponse);
-
-
-        RestAssured
-                .given()
-                .contentType("application/json\r\n")
-                .body(new TreeRequest(fourthNode))
-                .when()
-                .patch("/trees/" + secondNode)
-                .then()
-                .log().all()
+        sendPatchRequestForUpdateParent(idRoot, secondNode)
                 .statusCode(400)
-                .body("message", Matchers.equalTo("Your change will genarate a StackOverFlowError"));
+                .body("message", Matchers.equalTo("It is not possible to insert a parent in a root"));
     }
 
     private String returnCreatedId(Response response) {
         String[] split = response.getHeader("Location").split("/");
         return split[split.length - 1];
+    }
+
+    private ValidatableResponse sendPostRequestAndReturnValidatableResponse(TreeRequest treeRequest) {
+        return sendPostRequestAndReturnResponse(treeRequest)
+                .then()
+                .log().all();
+    }
+
+    private Response sendPostRequestAndReturnResponse(TreeRequest treeRequest) {
+        return RestAssured
+                .given()
+                .contentType(ContentType.JSON)
+                .body(treeRequest)
+                .when()
+                .post("/trees");
+    }
+
+    private ValidatableResponse sendGetRequestForFindById(String idNode) {
+        return RestAssured
+                .given()
+                .contentType(ContentType.JSON)
+                .when()
+                .get("/trees/" + idNode)
+                .then()
+                .log().all();
+    }
+
+    private ValidatableResponse sendAGetRequestForGetAllChildrens(String idNode) {
+        return RestAssured
+                .given()
+                .contentType(ContentType.JSON)
+                .when()
+                .get("/trees/" + idNode + "/childrens")
+                .then()
+                .log().all();
+    }
+
+    private ValidatableResponse sendPatchRequestForUpdateParent(String currentNode, String newParent) {
+        return RestAssured
+                .given()
+                .contentType(ContentType.JSON)
+                .body(new TreeRequest(newParent))
+                .when()
+                .patch("/trees/" + currentNode)
+                .then()
+                .log().all();
     }
 
 }
