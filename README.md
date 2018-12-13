@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/juliofalbo/tradeshift.svg?branch=master)](https://travis-ci.org/juliofalbo/tradeshift)
+
 # Tradeshift Challenge - Backend Position
  This application was developed following level 3 of the [Richardson Maturity Model](https://github.com/juliofalbo/poc-restful-api) (Restful + HATEOAS)
 
