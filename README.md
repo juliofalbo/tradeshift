@@ -16,7 +16,15 @@
 ```
 
 ### Tests
-The strategy used for the tests was that of integration tests, using the RestAssured
+The strategy used for the tests was that of integration tests, using the [RestAssured](http://rest-assured.io/)
+
+### Swagger
+To access the swagger, simply run the application and enter the **/swagger-ui.html** path.
+
+```
+Example running local: http://localhost:8080/swagger-ui.html
+```
+
 
 ##### To run the tests
 ```
